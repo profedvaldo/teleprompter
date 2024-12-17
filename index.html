@@ -28,11 +28,14 @@
       margin: 10px 0;
     }
     .teleprompter {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 300px;
       overflow: hidden;
       background: black;
-      border: 2px solid #444;
+      border-bottom: 2px solid #444;
       padding: 20px;
       text-align: center;
     }
@@ -43,11 +46,14 @@
       margin: 0;
     }
     .timers span {
-      margin-right: 10px;
-      font-size: 1.2rem;
+      margin-right: 15px;
+      font-size: 1.8rem;
     }
     .highlight {
       color: red;
+    }
+    button {
+      margin-left: 5px;
     }
   </style>
 </head>
@@ -59,7 +65,8 @@
       <label>Tamanho do Texto: <input type="number" id="textSize" class="form-control form-control-sm d-inline w-25" value="24" min="10" max="100"></label>
       <label>Tempo Limite (segundos): <input type="number" id="countdown" class="form-control form-control-sm d-inline w-25" value="60"></label>
       <button id="start" class="btn btn-success btn-sm">Iniciar</button>
-      <button id="pause" class="btn btn-warning btn-sm">Pausar</button>
+      <button id="pause" class="btn btn-warning btn-sm d-none">Pausar</button>
+      <button id="continue" class="btn btn-info btn-sm d-none">Continuar</button>
       <button id="reset" class="btn btn-danger btn-sm">Resetar</button>
     </div>
     <div class="timers mb-3">
@@ -80,6 +87,7 @@
     const scriptInput = document.getElementById('scriptInput');
     const startBtn = document.getElementById('start');
     const pauseBtn = document.getElementById('pause');
+    const continueBtn = document.getElementById('continue');
     const resetBtn = document.getElementById('reset');
     const speedInput = document.getElementById('speed');
     const textSizeInput = document.getElementById('textSize');
@@ -93,6 +101,7 @@
     let timerCount = 0;
     let countdownTime = 0;
     let isRunning = false;
+    let pausedPosition = 0;
 
     // Atualizar hora atual
     function updateClock() {
@@ -103,41 +112,42 @@
 
     // Calcular previsão de leitura
     function calculateReadingTime() {
-      const words = scriptInput.value.split(/\s+/).length;
-      const speed = parseInt(speedInput.value);
-      const estimatedSeconds = Math.ceil(words / (speed / 50));
+      const textLength = scriptInput.value.length;
+      const speed = parseInt(speedInput.value, 10);
+      const estimatedSeconds = Math.ceil(textLength / (speed * 0.03));
       timeEstimate.textContent = `Previsão de Leitura: ${formatTime(estimatedSeconds)}`;
     }
 
     scriptInput.addEventListener('input', calculateReadingTime);
     speedInput.addEventListener('input', calculateReadingTime);
+    textSizeInput.addEventListener('input', calculateReadingTime);
 
     // Iniciar teleprompter
     function startTeleprompter() {
       if (isRunning) return;
       isRunning = true;
+      startBtn.classList.add('d-none');
+      pauseBtn.classList.remove('d-none');
+      continueBtn.classList.add('d-none');
+
       teleprompterText.textContent = scriptInput.value;
       scriptInput.style.display = 'none';
       teleprompterText.style.fontSize = textSizeInput.value + 'px';
 
       countdownTime = parseInt(countdownInput.value, 10);
       let scrollSpeed = parseInt(speedInput.value, 10);
-      teleprompterText.style.transform = 'translateY(0)';
+      let position = pausedPosition;
 
-      // Scroll Animation
-      let position = 0;
       scrollInterval = setInterval(() => {
-        position -= scrollSpeed / 10;
+        position -= scrollSpeed / 20;
         teleprompterText.style.transform = `translateY(${position}px)`;
-      }, 100);
+      }, 50);
 
-      // Timer positivo
       timerInterval = setInterval(() => {
         timerCount++;
         timerSpan.textContent = `Contagem Positiva: ${formatTime(timerCount)}`;
       }, 1000);
 
-      // Contagem regressiva
       countdownInterval = setInterval(() => {
         if (countdownTime <= 0) {
           clearInterval(countdownInterval);
@@ -156,7 +166,15 @@
       clearInterval(scrollInterval);
       clearInterval(timerInterval);
       clearInterval(countdownInterval);
+      pauseBtn.classList.add('d-none');
+      continueBtn.classList.remove('d-none');
       isRunning = false;
+      pausedPosition = parseInt(getComputedStyle(teleprompterText).transform.split(',')[5]);
+    }
+
+    // Função de continuar
+    function continueTeleprompter() {
+      startTeleprompter();
     }
 
     // Função reset
@@ -164,23 +182,15 @@
       pauseTeleprompter();
       teleprompterText.style.transform = 'translateY(0)';
       scriptInput.style.display = 'block';
+      startBtn.classList.remove('d-none');
+      pauseBtn.classList.add('d-none');
+      continueBtn.classList.add('d-none');
       timerCount = 0;
       countdownSpan.classList.remove('highlight');
       timerSpan.textContent = `Contagem Positiva: 00:00`;
       countdownSpan.textContent = `Contagem Regressiva: ${formatTime(countdownInput.value)}`;
+      pausedPosition = 0;
     }
-
-    // Atualizar tamanho da fonte e velocidade em tempo real
-    textSizeInput.addEventListener('input', () => {
-      teleprompterText.style.fontSize = textSizeInput.value + 'px';
-    });
-
-    speedInput.addEventListener('input', () => {
-      if (isRunning) {
-        clearInterval(scrollInterval);
-        startTeleprompter();
-      }
-    });
 
     // Formatador de tempo
     function formatTime(seconds) {
@@ -192,6 +202,7 @@
     // Event Listeners
     startBtn.addEventListener('click', startTeleprompter);
     pauseBtn.addEventListener('click', pauseTeleprompter);
+    continueBtn.addEventListener('click', continueTeleprompter);
     resetBtn.addEventListener('click', resetTeleprompter);
   </script>
 </body>
