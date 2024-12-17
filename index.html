@@ -12,7 +12,7 @@
       padding: 0;
       background-color: #111;
       color: #fff;
-      overflow: hidden;
+      overflow-y: auto; /* Adiciona rolagem vertical se necessário */
     }
     .controls {
       position: fixed;
@@ -24,26 +24,24 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      z-index: 10;
+      z-index: 1000;
     }
     textarea {
       width: 90%;
       height: 150px;
       font-size: 16px;
-      margin-top: 180px; /* Para compensar os controles fixos */
+      margin: 110px auto 20px auto; /* Espaço após os controles fixos */
       display: block;
     }
     .teleprompter {
-      position: fixed;
-      top: 60px; /* Logo abaixo dos controles */
-      left: 0;
+      margin-top: 10px;
       width: 100%;
-      height: calc(100vh - 60px);
+      height: calc(100vh - 180px);
       overflow: hidden;
-      background: black;
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       justify-content: center;
+      background: black;
     }
     .teleprompter p {
       margin: 0;
@@ -114,14 +112,12 @@
     let isRunning = false;
     let pausedPosition = 0;
 
-    // Atualizar hora atual
     function updateClock() {
       const now = new Date();
       clockSpan.textContent = `Hora Atual: ${now.toLocaleTimeString()}`;
     }
     setInterval(updateClock, 1000);
 
-    // Calcular previsão de leitura
     function calculateReadingTime() {
       const textLength = scriptInput.value.split(' ').length;
       const speed = parseInt(speedInput.value, 10);
@@ -132,18 +128,14 @@
     speedInput.addEventListener('input', calculateReadingTime);
     textSizeInput.addEventListener('input', calculateReadingTime);
 
-    // Iniciar teleprompter
     function startTeleprompter() {
       if (isRunning) return;
       isRunning = true;
       startBtn.classList.add('d-none');
       pauseBtn.classList.remove('d-none');
-      continueBtn.classList.add('d-none');
-
       teleprompterText.textContent = scriptInput.value;
       scriptInput.style.display = 'none';
       teleprompterText.style.fontSize = textSizeInput.value + 'px';
-
       countdownTime = parseInt(countdownInput.value, 10);
       let scrollSpeed = parseInt(speedInput.value, 10);
       let position = pausedPosition;
@@ -152,29 +144,10 @@
         position -= scrollSpeed / 20;
         teleprompterText.style.transform = `translateY(${position}px)`;
       }, 50);
-
-      timerInterval = setInterval(() => {
-        timerCount++;
-        timerSpan.textContent = `Contagem Positiva: ${formatTime(timerCount)}`;
-      }, 1000);
-
-      countdownInterval = setInterval(() => {
-        if (countdownTime <= 0) {
-          clearInterval(countdownInterval);
-          countdownSpan.textContent = `Contagem Regressiva: 00:00`;
-          countdownSpan.classList.add('highlight');
-        } else {
-          countdownTime--;
-          countdownSpan.textContent = `Contagem Regressiva: ${formatTime(countdownTime)}`;
-          if (countdownTime <= 10) countdownSpan.classList.add('highlight');
-        }
-      }, 1000);
     }
 
     function pauseTeleprompter() {
       clearInterval(scrollInterval);
-      clearInterval(timerInterval);
-      clearInterval(countdownInterval);
       pauseBtn.classList.add('d-none');
       continueBtn.classList.remove('d-none');
       isRunning = false;
@@ -187,12 +160,7 @@
       scriptInput.style.display = 'block';
       startBtn.classList.remove('d-none');
       pauseBtn.classList.add('d-none');
-      continueBtn.classList.add('d-none');
       timerCount = 0;
-      countdownSpan.classList.remove('highlight');
-      timerSpan.textContent = `Contagem Positiva: 00:00`;
-      countdownSpan.textContent = `Contagem Regressiva: ${formatTime(countdownInput.value)}`;
-      pausedPosition = 0;
     }
 
     function formatTime(seconds) {
@@ -203,7 +171,6 @@
 
     startBtn.addEventListener('click', startTeleprompter);
     pauseBtn.addEventListener('click', pauseTeleprompter);
-    continueBtn.addEventListener('click', startTeleprompter);
     resetBtn.addEventListener('click', resetTeleprompter);
   </script>
 </body>
