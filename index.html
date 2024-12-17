@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teleprompter com Funções de Relógio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #111;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+    .controls, .timers {
+      margin: 10px 0;
+    }
+    textarea {
+      width: 90%;
+      height: 150px;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    .teleprompter {
+      width: 100%;
+      height: 300px;
+      overflow: hidden;
+      background: black;
+      border: 2px solid #444;
+      padding: 20px;
+      text-align: center;
+    }
+    .teleprompter p {
+      font-size: 2rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
+    .timers span {
+      margin-right: 10px;
+      font-size: 1.2rem;
+    }
+    .highlight {
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <h1>Teleprompter com Funções de Relógio</h1>
+  <div class="controls">
+    <label>Velocidade (px/segundo): <input type="number" id="speed" value="50" min="10" max="500"></label>
+    <label>Tamanho do Texto: <input type="number" id="textSize" value="24" min="10" max="100"></label>
+    <label>Tempo Limite (segundos): <input type="number" id="countdown" value="60"></label>
+    <button id="start">Iniciar</button>
+    <button id="pause">Pausar</button>
+    <button id="reset">Resetar</button>
+  </div>
+  <textarea id="scriptInput" placeholder="Cole ou digite seu texto aqui..."></textarea>
+  <div class="timers">
+    <span id="clock">Hora Atual: --:--:--</span>
+    <span id="timer">Contagem Positiva: 00:00</span>
+    <span id="countdownTimer">Contagem Regressiva: 00:00</span>
+  </div>
+  <div class="teleprompter">
+    <p id="teleprompterText"></p>
+  </div>
+  <script>
+    const teleprompterText = document.getElementById('teleprompterText');
+    const scriptInput = document.getElementById('scriptInput');
+    const startBtn = document.getElementById('start');
+    const pauseBtn = document.getElementById('pause');
+    const resetBtn = document.getElementById('reset');
+    const speedInput = document.getElementById('speed');
+    const textSizeInput = document.getElementById('textSize');
+    const countdownInput = document.getElementById('countdown');
+    const clockSpan = document.getElementById('clock');
+    const timerSpan = document.getElementById('timer');
+    const countdownSpan = document.getElementById('countdownTimer');
+
+    let scrollInterval, timerInterval, countdownInterval;
+    let timerCount = 0;
+    let countdownTime = 0;
+    let isRunning = false;
+
+    // Atualizar hora atual
+    function updateClock() {
+      const now = new Date();
+      clockSpan.textContent = `Hora Atual: ${now.toLocaleTimeString()}`;
+    }
+    setInterval(updateClock, 1000);
+
+    // Iniciar teleprompter
+    function startTeleprompter() {
+      if (isRunning) return;
+      isRunning = true;
+      teleprompterText.textContent = scriptInput.value;
+      teleprompterText.style.fontSize = textSizeInput.value + 'px';
+
+      countdownTime = parseInt(countdownInput.value, 10);
+      let scrollSpeed = parseInt(speedInput.value, 10);
+      teleprompterText.style.transform = 'translateY(0)';
+
+      // Scroll Animation
+      let position = 0;
+      scrollInterval = setInterval(() => {
+        position -= scrollSpeed / 10;
+        teleprompterText.style.transform = `translateY(${position}px)`;
+      }, 100);
+
+      // Timer positivo
+      timerInterval = setInterval(() => {
+        timerCount++;
+        timerSpan.textContent = `Contagem Positiva: ${formatTime(timerCount)}`;
+      }, 1000);
+
+      // Contagem regressiva
+      countdownInterval = setInterval(() => {
+        if (countdownTime <= 0) {
+          clearInterval(countdownInterval);
+          countdownSpan.textContent = `Contagem Regressiva: 00:00`;
+          countdownSpan.classList.add('highlight');
+        } else {
+          countdownTime--;
+          countdownSpan.textContent = `Contagem Regressiva: ${formatTime(countdownTime)}`;
+          if (countdownTime <= 10) countdownSpan.classList.add('highlight');
+        }
+      }, 1000);
+    }
+
+    // Função de pausa
+    function pauseTeleprompter() {
+      clearInterval(scrollInterval);
+      clearInterval(timerInterval);
+      clearInterval(countdownInterval);
+      isRunning = false;
+    }
+
+    // Função reset
+    function resetTeleprompter() {
+      pauseTeleprompter();
+      teleprompterText.style.transform = 'translateY(0)';
+      timerCount = 0;
+      countdownSpan.classList.remove('highlight');
+      timerSpan.textContent = `Contagem Positiva: 00:00`;
+      countdownSpan.textContent = `Contagem Regressiva: ${formatTime(countdownInput.value)}`;
+    }
+
+    // Formatador de tempo
+    function formatTime(seconds) {
+      const min = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const sec = String(seconds % 60).padStart(2, '0');
+      return `${min}:${sec}`;
+    }
+
+    // Event Listeners
+    startBtn.addEventListener('click', startTeleprompter);
+    pauseBtn.addEventListener('click', pauseTeleprompter);
+    resetBtn.addEventListener('click', resetTeleprompter);
+  </script>
+</body>
+</html>
